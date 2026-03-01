@@ -3,3 +3,16 @@
 # SOP And Docs
 PRD.md
 learnings.txt
+
+# Rust
+**/*.rs.bk
+*.pdb
+
+# IDEs and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local log files (retain test fixtures)
+*.log
+!tests/**/*.log
