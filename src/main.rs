@@ -8,3 +8,4 @@ fn main() {
     println!("Input File: {:?}", args.file);
     println!("Verbose: {}", args.verbose);
 }
+
