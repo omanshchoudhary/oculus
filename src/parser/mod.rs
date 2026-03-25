@@ -1,4 +1,5 @@
 use crate::types::LogEntry;
+pub mod apache;
 
 // Creating a trait to be followed by the parsers
 pub trait LogParser {
