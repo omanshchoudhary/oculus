@@ -1,11 +1,13 @@
 mod analyzer;
 mod cli;
+mod output;
 mod parser;
 mod reader;
 mod types;
 
 use clap::Parser;
 use cli::Cli;
+use output::terminal::print_summary;
 use parser::LogParser;
 use parser::apache::ApacheParser;
 use reader::LogReader;
@@ -25,7 +27,7 @@ fn main() -> anyhow::Result<()> {
                 match parser.parse(&line) {
                     Ok(entry) => stats.on_parsed_entry(&entry),
                     Err(err) => {
-                        stats.on_parse_errors();
+                        stats.on_parse_error();
                         eprintln!("parse error at line {}: {}", line_no, err);
                     }
                 }
@@ -35,23 +37,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
     }
+    print_summary(&stats);
 
-    println!("=== Summary ===");
-    println!("Total lines: {}", stats.total_lines);
-    println!("Parsed lines: {}", stats.parsed_lines);
-    println!("Parse errors: {}", stats.parsed_errors);
-
-    println!("\nStatus counts:");
-    let mut status_items: Vec<(u16, usize)> =
-        stats.status_counts.iter().map(|(k, v)| (*k, *v)).collect();
-    status_items.sort_by_key(|(code, _)| *code);
-
-    for (code, count) in status_items {
-        println!("  {} -> {}", code, count);
-    }
-    println!("\nTop paths:");
-    for (path, count) in stats.top_paths_sorted(10) {
-        println!("  {} -> {}", path, count);
-    }
     Ok(())
 }

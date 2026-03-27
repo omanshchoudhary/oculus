@@ -17,7 +17,7 @@ impl Stats {
         }
     }
 
-    pub fn on_parse_errors(&mut self) {
+    pub fn on_parse_error(&mut self) {
         self.parsed_errors += 1;
     }
 

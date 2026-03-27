@@ -34,3 +34,30 @@ impl LogParser for ApacheParser {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::LogParser;
+
+    #[test]
+    fn parse_valid_apache_line() {
+        let parser = ApacheParser::new();
+        let line =
+            r#"127.0.0.1 - - [10/Oct/2023:13:55:36 +0000] "GET /api/users HTTP/1.1" 200 1234"#;
+
+        let entry = parser.parse(line).expect("should parse");
+        assert_eq!(entry.ip.as_deref(), Some("127.0.0.1"));
+        assert_eq!(entry.method.as_deref(), Some("GET"));
+        assert_eq!(entry.path.as_deref(), Some("/api/users"));
+        assert_eq!(entry.status, Some(200));
+    }
+
+    #[test]
+    fn parse_invalid_apache_line() {
+        let parser = ApacheParser::new();
+        let bad = "this is not apache log format";
+        let res = parser.parse(bad);
+        assert!(res.is_err());
+    }
+}
