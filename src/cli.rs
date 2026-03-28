@@ -1,3 +1,4 @@
+use crate::types::LogFormat;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -5,6 +6,9 @@ use std::path::PathBuf;
 #[command(name = "oculus", version, about = "Analyze log files")]
 pub struct Cli {
     pub file: PathBuf,
+
+    #[arg(long, value_enum, default_value_t = LogFormat::Auto)]
+    pub format: LogFormat,
 
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,

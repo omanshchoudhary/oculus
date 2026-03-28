@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use std::collections::HashMap;
 
 // Modularizing The Logs And Giving Format
@@ -10,6 +11,14 @@ pub struct LogEntry {
     pub status: Option<u16>,
     pub message: String,
     pub raw: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum LogFormat {
+    Auto,
+    Apache,
+    Nginx,
+    Json,
 }
 
 #[derive(Debug, Default)]
