@@ -1,5 +1,6 @@
 use crate::types::LogEntry;
 pub mod apache;
+pub mod detector;
 pub mod json;
 pub mod nginx;
 // Creating a trait to be followed by the parsers

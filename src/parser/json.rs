@@ -16,7 +16,7 @@ pub struct JsonParser;
 
 #[allow(dead_code)]
 impl JsonParser {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self
     }
 }
