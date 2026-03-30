@@ -18,6 +18,7 @@ use reader::LogReader;
 use std::path::Path;
 use types::Stats;
 
+use crate::filter::{FilterConfig, FilterEngine};
 use crate::types::LogFormat;
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
@@ -63,6 +64,12 @@ fn main() -> anyhow::Result<()> {
     }
 
     let parser = build_parser(selected_format);
+    let filters = FilterEngine::new(FilterConfig {
+        status: args.status,
+        contains: None,
+        regex: None,
+    });
+
     let mut reader = LogReader::new(&args.file)?;
     let mut stats = Stats::default();
 
@@ -72,7 +79,11 @@ fn main() -> anyhow::Result<()> {
                 stats.on_line_read();
 
                 match parser.parse(&line) {
-                    Ok(entry) => stats.on_parsed_entry(&entry),
+                    Ok(entry) => {
+                        if filters.accept(&entry) {
+                            stats.on_parsed_entry(&entry);
+                        }
+                    }
                     Err(err) => {
                         stats.on_parse_error();
                         eprintln!("parse error at line {}: {}", line_no, err);

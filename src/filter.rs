@@ -18,7 +18,12 @@ impl FilterEngine {
     pub fn new(config: FilterConfig) -> Self {
         Self { config }
     }
-    pub fn accept(&self, _entry: &LogEntry) -> bool {
+    pub fn accept(&self, entry: &LogEntry) -> bool {
+        if let Some(status) = self.config.status
+            && entry.status != Some(status)
+        {
+            return false;
+        }
         true
     }
 }
@@ -44,5 +49,26 @@ mod tests {
     fn default_filter_accepts_entry() {
         let engine = FilterEngine::new(FilterConfig::default());
         assert!(engine.accept(&sample_entry()));
+    }
+    #[test]
+    fn matching_status_is_accepted() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: Some(200),
+            contains: None,
+            regex: None,
+        });
+
+        assert!(engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn non_matching_status_is_rejected() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: Some(404),
+            contains: None,
+            regex: None,
+        });
+
+        assert!(!engine.accept(&sample_entry()));
     }
 }

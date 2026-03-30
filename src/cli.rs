@@ -10,6 +10,9 @@ pub struct Cli {
     #[arg(long, value_enum, default_value_t = LogFormat::Auto)]
     pub format: LogFormat,
 
+    #[arg(long)]
+    pub status: Option<u16>,
+
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,
 }
