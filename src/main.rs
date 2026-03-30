@@ -66,7 +66,7 @@ fn main() -> anyhow::Result<()> {
     let parser = build_parser(selected_format);
     let filters = FilterEngine::new(FilterConfig {
         status: args.status,
-        contains: None,
+        contains: args.contains,
         regex: None,
     });
 

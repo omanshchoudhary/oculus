@@ -13,6 +13,9 @@ pub struct Cli {
     #[arg(long)]
     pub status: Option<u16>,
 
+    #[arg(long)]
+    pub contains: Option<String>,
+
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,
 }

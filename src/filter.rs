@@ -24,6 +24,11 @@ impl FilterEngine {
         {
             return false;
         }
+        if let Some(contains) = self.config.contains.as_deref()
+            && !entry.raw.contains(contains)
+        {
+            return false;
+        }
         true
     }
 }
@@ -48,8 +53,10 @@ mod tests {
     #[test]
     fn default_filter_accepts_entry() {
         let engine = FilterEngine::new(FilterConfig::default());
+
         assert!(engine.accept(&sample_entry()));
     }
+
     #[test]
     fn matching_status_is_accepted() {
         let engine = FilterEngine::new(FilterConfig {
@@ -66,6 +73,50 @@ mod tests {
         let engine = FilterEngine::new(FilterConfig {
             status: Some(404),
             contains: None,
+            regex: None,
+        });
+
+        assert!(!engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn matching_contains_is_accepted() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: Some("/api/users".to_string()),
+            regex: None,
+        });
+
+        assert!(engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn non_matching_contains_is_rejected() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: Some("/admin".to_string()),
+            regex: None,
+        });
+
+        assert!(!engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn status_and_contains_both_apply() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: Some(200),
+            contains: Some("GET".to_string()),
+            regex: None,
+        });
+
+        assert!(engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn status_match_but_contains_miss_is_rejected() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: Some(200),
+            contains: Some("DELETE".to_string()),
             regex: None,
         });
 
