@@ -1,5 +1,6 @@
 mod analyzer;
 mod cli;
+mod filter;
 mod output;
 mod parser;
 mod reader;
