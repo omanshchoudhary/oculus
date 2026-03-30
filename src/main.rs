@@ -67,8 +67,8 @@ fn main() -> anyhow::Result<()> {
     let filters = FilterEngine::new(FilterConfig {
         status: args.status,
         contains: args.contains,
-        regex: None,
-    });
+        regex: args.regex,
+    })?;
 
     let mut reader = LogReader::new(&args.file)?;
     let mut stats = Stats::default();

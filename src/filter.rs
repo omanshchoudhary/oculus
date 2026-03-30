@@ -1,3 +1,6 @@
+use anyhow::{Ok, Result};
+use regex::Regex;
+
 use crate::types::LogEntry;
 
 #[allow(dead_code)]
@@ -10,22 +13,38 @@ pub struct FilterConfig {
 
 #[allow(dead_code)]
 pub struct FilterEngine {
-    config: FilterConfig,
+    status: Option<u16>,
+    contains: Option<String>,
+    regex: Option<Regex>,
 }
 
 #[allow(dead_code)]
 impl FilterEngine {
-    pub fn new(config: FilterConfig) -> Self {
-        Self { config }
+    pub fn new(config: FilterConfig) -> Result<Self> {
+        let compiled_regex = match config.regex {
+            Some(pattern) => Some(Regex::new(&pattern)?),
+            None => None,
+        };
+
+        Ok(Self {
+            status: config.status,
+            contains: config.contains,
+            regex: compiled_regex,
+        })
     }
     pub fn accept(&self, entry: &LogEntry) -> bool {
-        if let Some(status) = self.config.status
+        if let Some(status) = self.status
             && entry.status != Some(status)
         {
             return false;
         }
-        if let Some(contains) = self.config.contains.as_deref()
+        if let Some(contains) = self.contains.as_deref()
             && !entry.raw.contains(contains)
+        {
+            return false;
+        }
+        if let Some(regex) = &self.regex
+            && !regex.is_match(&entry.raw)
         {
             return false;
         }
@@ -52,7 +71,7 @@ mod tests {
 
     #[test]
     fn default_filter_accepts_entry() {
-        let engine = FilterEngine::new(FilterConfig::default());
+        let engine = FilterEngine::new(FilterConfig::default()).expect("valid filter config");
 
         assert!(engine.accept(&sample_entry()));
     }
@@ -63,7 +82,8 @@ mod tests {
             status: Some(200),
             contains: None,
             regex: None,
-        });
+        })
+        .expect("valid filter config");
 
         assert!(engine.accept(&sample_entry()));
     }
@@ -74,7 +94,8 @@ mod tests {
             status: Some(404),
             contains: None,
             regex: None,
-        });
+        })
+        .expect("valid filter config");
 
         assert!(!engine.accept(&sample_entry()));
     }
@@ -85,7 +106,8 @@ mod tests {
             status: None,
             contains: Some("/api/users".to_string()),
             regex: None,
-        });
+        })
+        .expect("valid filter config");
 
         assert!(engine.accept(&sample_entry()));
     }
@@ -96,30 +118,56 @@ mod tests {
             status: None,
             contains: Some("/admin".to_string()),
             regex: None,
-        });
+        })
+        .expect("valid filter config");
 
         assert!(!engine.accept(&sample_entry()));
     }
 
     #[test]
-    fn status_and_contains_both_apply() {
+    fn matching_regex_is_accepted() {
         let engine = FilterEngine::new(FilterConfig {
-            status: Some(200),
-            contains: Some("GET".to_string()),
-            regex: None,
-        });
+            status: None,
+            contains: None,
+            regex: Some(r"/api/\w+".to_string()),
+        })
+        .expect("valid filter config");
 
         assert!(engine.accept(&sample_entry()));
     }
 
     #[test]
-    fn status_match_but_contains_miss_is_rejected() {
+    fn non_matching_regex_is_rejected() {
         let engine = FilterEngine::new(FilterConfig {
-            status: Some(200),
-            contains: Some("DELETE".to_string()),
-            regex: None,
-        });
+            status: None,
+            contains: None,
+            regex: Some(r"/admin/\w+".to_string()),
+        })
+        .expect("valid filter config");
 
         assert!(!engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn invalid_regex_is_rejected_during_construction() {
+        let result = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: None,
+            regex: Some("[".to_string()),
+        });
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn all_filters_can_be_combined() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: Some(200),
+            contains: Some("GET".to_string()),
+            regex: Some(r"users".to_string()),
+        })
+        .expect("valid filter config");
+
+        assert!(engine.accept(&sample_entry()));
     }
 }
