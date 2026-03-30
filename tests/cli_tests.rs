@@ -51,3 +51,39 @@ fn test_pipeline_malformed_lines_have_line_number_and_no_panic() {
 
     assert!(stderr.contains("parse error at line 2"));
 }
+
+#[test]
+fn test_strict_mode_fails_on_parse_errors() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--fail-on-parse-errors",
+            "tests/fixtures/apache/malformed.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(!output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    assert!(stdout.contains("Parse errors: 1"));
+    assert!(stderr.contains("encountered 1 parse error(s) with strict mode enabled"));
+}
+
+#[test]
+fn test_strict_mode_succeeds_when_no_parse_errors_exist() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--fail-on-parse-errors",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+}

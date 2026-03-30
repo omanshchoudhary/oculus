@@ -6,6 +6,7 @@ mod parser;
 mod reader;
 mod types;
 
+use anyhow::anyhow;
 use clap::Parser;
 use cli::Cli;
 use output::terminal::print_summary;
@@ -96,5 +97,11 @@ fn main() -> anyhow::Result<()> {
         }
     }
     print_summary(&stats);
+    if args.fail_on_parse_errors && stats.parsed_errors > 0 {
+        return Err(anyhow!(
+            "encountered {} parse error(s) with strict mode enabled",
+            stats.parsed_errors
+        ));
+    }
     Ok(())
 }
