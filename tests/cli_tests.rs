@@ -153,3 +153,74 @@ fn test_mixed_filters_no_match() {
     assert!(stdout.contains("Parsed lines: 0"));
     assert!(stdout.contains("Parse errors: 0"));
 }
+
+#[test]
+fn test_mixed_filters_status_and_time_range() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--status",
+            "200",
+            "--from",
+            "2023-10-10T13:55:39+00:00",
+            "--to",
+            "2023-10-10T13:55:41+00:00",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 1"));
+    assert!(stdout.contains("Parse errors: 0"));
+    assert!(stdout.contains("200 -> 1"));
+}
+
+#[test]
+fn test_mixed_filters_ip_and_regex() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--ip",
+            "127.0.0.1",
+            "--regex",
+            r"/api/\w+",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 3"));
+    assert!(stdout.contains("200 -> 1"));
+    assert!(stdout.contains("404 -> 1"));
+    assert!(stdout.contains("500 -> 1"));
+}
+
+#[test]
+fn test_mixed_filters_cidr_and_contains() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--cidr",
+            "192.168.1.0/24",
+            "--contains",
+            "/api",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 1"));
+    assert!(stdout.contains("200 -> 1"));
+}
