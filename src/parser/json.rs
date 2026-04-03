@@ -1,5 +1,6 @@
 use crate::parser::LogParser;
 use crate::types::LogEntry;
+use chrono::DateTime;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -8,6 +9,7 @@ struct JsonLogEntry {
     method: Option<String>,
     path: Option<String>,
     status: Option<u16>,
+    timestamp: Option<String>,
     message: Option<String>,
 }
 
@@ -31,6 +33,9 @@ impl LogParser for JsonParser {
             method: parsed.method,
             path: parsed.path,
             status: parsed.status,
+            timestamp: parsed
+                .timestamp
+                .and_then(|ts| DateTime::parse_from_rfc3339(&ts).ok()),
             message: parsed.message.unwrap_or_default(),
             raw: line.to_string(),
         })

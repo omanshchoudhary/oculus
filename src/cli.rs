@@ -19,6 +19,12 @@ pub struct Cli {
     #[arg(long)]
     pub regex: Option<String>,
 
+    #[arg(long)]
+    pub from: Option<String>,
+
+    #[arg(long)]
+    pub to: Option<String>,
+
     #[arg(long, default_value_t = false)]
     pub fail_on_parse_errors: bool,
 

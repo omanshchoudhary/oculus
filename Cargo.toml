@@ -12,6 +12,7 @@ anyhow = "1"
 tracing = "0.1"
 regex = "1"
 flate2 = "1"
+chrono = "0.4"
 
 [dev-dependencies]
 assert_cmd = "2"

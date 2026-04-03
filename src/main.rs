@@ -69,6 +69,8 @@ fn main() -> anyhow::Result<()> {
         status: args.status,
         contains: args.contains,
         regex: args.regex,
+        from: args.from,
+        to: args.to,
     })?;
 
     let mut reader = LogReader::new(&args.file)?;

@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset};
 use clap::ValueEnum;
 use std::collections::HashMap;
 
@@ -9,6 +10,7 @@ pub struct LogEntry {
     pub method: Option<String>,
     pub path: Option<String>,
     pub status: Option<u16>,
+    pub timestamp: Option<DateTime<FixedOffset>>,
     pub message: String,
     pub raw: String,
 }
