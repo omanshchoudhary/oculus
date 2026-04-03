@@ -30,4 +30,10 @@ pub struct Cli {
 
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,
+
+    #[arg(long)]
+    pub ip: Option<String>,
+
+    #[arg(long)]
+    pub cidr: Option<String>,
 }

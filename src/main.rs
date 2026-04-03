@@ -71,6 +71,8 @@ fn main() -> anyhow::Result<()> {
         regex: args.regex,
         from: args.from,
         to: args.to,
+        ip: args.ip,
+        cidr: args.cidr,
     })?;
 
     let mut reader = LogReader::new(&args.file)?;

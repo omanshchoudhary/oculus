@@ -1,8 +1,9 @@
+use crate::types::LogEntry;
 use anyhow::Result;
 use chrono::{DateTime, FixedOffset};
+use ipnet::IpNet;
 use regex::Regex;
-
-use crate::types::LogEntry;
+use std::net::IpAddr;
 
 #[allow(dead_code)]
 #[derive(Debug, Default)]
@@ -12,6 +13,8 @@ pub struct FilterConfig {
     pub regex: Option<String>,
     pub from: Option<String>,
     pub to: Option<String>,
+    pub ip: Option<String>,
+    pub cidr: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -21,6 +24,8 @@ pub struct FilterEngine {
     regex: Option<Regex>,
     from: Option<DateTime<FixedOffset>>,
     to: Option<DateTime<FixedOffset>>,
+    ip: Option<IpAddr>,
+    cidr: Option<IpNet>,
 }
 
 #[allow(dead_code)]
@@ -38,6 +43,15 @@ impl FilterEngine {
             Some(value) => Some(DateTime::parse_from_rfc3339(&value)?),
             None => None,
         };
+        let ip = match config.ip {
+            Some(value) => Some(value.parse::<IpAddr>()?),
+            None => None,
+        };
+
+        let cidr = match config.cidr {
+            Some(value) => Some(value.parse::<IpNet>()?),
+            None => None,
+        };
 
         Ok(Self {
             status: config.status,
@@ -45,8 +59,11 @@ impl FilterEngine {
             regex: compiled_regex,
             from,
             to,
+            ip,
+            cidr,
         })
     }
+
     pub fn accept(&self, entry: &LogEntry) -> bool {
         if let Some(status) = self.status
             && entry.status != Some(status)
@@ -75,6 +92,25 @@ impl FilterEngine {
             && ts > to
         {
             return false;
+        }
+
+        if self.ip.is_some() || self.cidr.is_some() {
+            let entry_ip = match entry.ip.as_deref().and_then(|v| v.parse::<IpAddr>().ok()) {
+                Some(ip) => ip,
+                None => return false,
+            };
+
+            if let Some(ip) = self.ip
+                && entry_ip != ip
+            {
+                return false;
+            }
+
+            if let Some(cidr) = self.cidr
+                && !cidr.contains(&entry_ip)
+            {
+                return false;
+            }
         }
         true
     }
@@ -115,6 +151,8 @@ mod tests {
             regex: None,
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -129,6 +167,8 @@ mod tests {
             regex: None,
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -143,6 +183,8 @@ mod tests {
             regex: None,
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -157,6 +199,8 @@ mod tests {
             regex: None,
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -171,6 +215,8 @@ mod tests {
             regex: Some(r"/api/\w+".to_string()),
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -185,6 +231,8 @@ mod tests {
             regex: Some(r"/admin/\w+".to_string()),
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -199,6 +247,8 @@ mod tests {
             regex: Some("[".to_string()),
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         });
 
         assert!(result.is_err());
@@ -212,6 +262,8 @@ mod tests {
             regex: Some(r"users".to_string()),
             from: None,
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -226,6 +278,8 @@ mod tests {
             regex: None,
             from: Some("invalid".to_string()),
             to: None,
+            ip: None,
+            cidr: None,
         });
 
         assert!(result.is_err());
@@ -239,6 +293,8 @@ mod tests {
             regex: None,
             from: None,
             to: Some("invalid".to_string()),
+            ip: None,
+            cidr: None,
         });
 
         assert!(result.is_err());
@@ -252,6 +308,8 @@ mod tests {
             regex: None,
             from: Some("2023-10-10T13:00:00+00:00".to_string()),
             to: Some("2023-10-10T14:00:00+00:00".to_string()),
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -266,6 +324,8 @@ mod tests {
             regex: None,
             from: Some("2023-10-10T14:00:00+00:00".to_string()),
             to: None,
+            ip: None,
+            cidr: None,
         })
         .expect("valid filter config");
 
@@ -280,6 +340,72 @@ mod tests {
             regex: None,
             from: None,
             to: Some("2023-10-10T13:00:00+00:00".to_string()),
+            ip: None,
+            cidr: None,
+        })
+        .expect("valid filter config");
+
+        assert!(!engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn exact_ip_filter_accepts_matching_ip() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: None,
+            regex: None,
+            from: None,
+            to: None,
+            ip: Some("127.0.0.1".to_string()),
+            cidr: None,
+        })
+        .expect("valid filter config");
+
+        assert!(engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn exact_ip_filter_rejects_non_matching_ip() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: None,
+            regex: None,
+            from: None,
+            to: None,
+            ip: Some("10.0.0.1".to_string()),
+            cidr: None,
+        })
+        .expect("valid filter config");
+
+        assert!(!engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn cidr_filter_accepts_matching_subnet() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: None,
+            regex: None,
+            from: None,
+            to: None,
+            ip: None,
+            cidr: Some("127.0.0.0/24".to_string()),
+        })
+        .expect("valid filter config");
+
+        assert!(engine.accept(&sample_entry()));
+    }
+
+    #[test]
+    fn cidr_filter_rejects_non_matching_subnet() {
+        let engine = FilterEngine::new(FilterConfig {
+            status: None,
+            contains: None,
+            regex: None,
+            from: None,
+            to: None,
+            ip: None,
+            cidr: Some("10.0.0.0/24".to_string()),
         })
         .expect("valid filter config");
 
