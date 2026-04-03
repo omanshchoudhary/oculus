@@ -9,6 +9,8 @@ mod types;
 use anyhow::anyhow;
 use clap::Parser;
 use cli::Cli;
+use output::csv::render_csv;
+use output::json::render_json;
 use output::terminal::print_summary;
 use parser::LogParser;
 use parser::apache::ApacheParser;
@@ -20,7 +22,7 @@ use std::path::Path;
 use types::Stats;
 
 use crate::filter::{FilterConfig, FilterEngine};
-use crate::types::LogFormat;
+use crate::types::{LogFormat, OutputFormat};
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
     let mut reader = LogReader::new(path)?;
@@ -100,7 +102,11 @@ fn main() -> anyhow::Result<()> {
             }
         }
     }
-    print_summary(&stats);
+    match args.output {
+        OutputFormat::Table => print_summary(&stats),
+        OutputFormat::Json => println!("{}", render_json(&stats)?),
+        OutputFormat::Csv => println!("{}", render_csv(&stats)),
+    }
     if args.fail_on_parse_errors && stats.parsed_errors > 0 {
         return Err(anyhow!(
             "encountered {} parse error(s) with strict mode enabled",

@@ -23,6 +23,13 @@ pub enum LogFormat {
     Json,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum OutputFormat {
+    Table,
+    Json,
+    Csv,
+}
+
 #[derive(Debug, Default)]
 pub struct Stats {
     pub total_lines: usize,

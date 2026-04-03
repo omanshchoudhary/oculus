@@ -2,7 +2,6 @@ use crate::types::Stats;
 use anyhow::Result;
 use serde::Serialize;
 
-#[allow(dead_code)]
 #[derive(Serialize)]
 struct JsonSummary {
     total_lines: usize,
@@ -12,7 +11,6 @@ struct JsonSummary {
     top_paths: Vec<(String, usize)>,
 }
 
-#[allow(dead_code)]
 pub fn render_json(stats: &Stats) -> Result<String> {
     let mut status_counts: Vec<(u16, usize)> =
         stats.status_counts.iter().map(|(k, v)| (*k, *v)).collect();

@@ -1,4 +1,4 @@
-use crate::types::LogFormat;
+use crate::types::{LogFormat, OutputFormat};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -9,6 +9,9 @@ pub struct Cli {
 
     #[arg(long, value_enum, default_value_t = LogFormat::Auto)]
     pub format: LogFormat,
+
+    #[arg(long, value_enum, default_value_t = OutputFormat::Table)]
+    pub output: OutputFormat,
 
     #[arg(long)]
     pub status: Option<u16>,

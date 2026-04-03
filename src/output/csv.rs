@@ -1,6 +1,5 @@
 use crate::types::Stats;
 
-#[allow(dead_code)]
 pub fn render_csv(stats: &Stats) -> String {
     let mut out = String::new();
     out.push_str("metric,value\n");
