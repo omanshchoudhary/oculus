@@ -11,17 +11,18 @@ use clap::Parser;
 use cli::Cli;
 use output::csv::render_csv;
 use output::json::render_json;
-use output::terminal::print_summary;
 use parser::LogParser;
 use parser::apache::ApacheParser;
 use parser::detector::detect_format;
 use parser::json::JsonParser;
 use parser::nginx::NginxParser;
 use reader::LogReader;
+use std::fs;
 use std::path::Path;
 use types::Stats;
 
 use crate::filter::{FilterConfig, FilterEngine};
+use crate::output::terminal::render_table;
 use crate::types::{LogFormat, OutputFormat};
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
@@ -102,11 +103,24 @@ fn main() -> anyhow::Result<()> {
             }
         }
     }
-    match args.output {
-        OutputFormat::Table => print_summary(&stats),
-        OutputFormat::Json => println!("{}", render_json(&stats)?),
-        OutputFormat::Csv => println!("{}", render_csv(&stats)),
+    let rendered_output = match args.output {
+        OutputFormat::Table => render_table(&stats),
+        OutputFormat::Json => render_json(&stats)?,
+        OutputFormat::Csv => render_csv(&stats),
+    };
+
+    if let Some(path) = args.output_file {
+        if path.exists() && !args.force {
+            return Err(anyhow!(
+                "output file '{}' already exists; use --force to overwrite",
+                path.display()
+            ));
+        }
+        fs::write(&path, rendered_output)?;
+    } else {
+        print!("{}", rendered_output);
     }
+
     if args.fail_on_parse_errors && stats.parsed_errors > 0 {
         return Err(anyhow!(
             "encountered {} parse error(s) with strict mode enabled",

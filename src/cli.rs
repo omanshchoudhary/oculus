@@ -14,6 +14,12 @@ pub struct Cli {
     pub output: OutputFormat,
 
     #[arg(long)]
+    pub output_file: Option<PathBuf>,
+
+    #[arg(long, default_value_t = false)]
+    pub force: bool,
+
+    #[arg(long)]
     pub status: Option<u16>,
 
     #[arg(long)]

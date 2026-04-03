@@ -1,4 +1,6 @@
-use std::process::Command;
+use std::{fs, process::Command};
+
+use tempfile::NamedTempFile;
 
 #[test]
 fn test_help() {
@@ -223,4 +225,81 @@ fn test_mixed_filters_cidr_and_contains() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Parsed lines: 1"));
     assert!(stdout.contains("200 -> 1"));
+}
+
+#[test]
+fn test_output_file_writes_json() {
+    let temp = NamedTempFile::new().expect("create temp file");
+    let out_path = temp.path().to_path_buf();
+    drop(temp); // allow app to create/write file path
+
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--output",
+            "json",
+            "--output-file",
+            out_path.to_str().expect("utf8 path"),
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let written = fs::read_to_string(&out_path).expect("read output file");
+    assert!(written.contains("\"total_lines\": 7"));
+    assert!(written.contains("\"parsed_lines\": 7"));
+}
+
+#[test]
+fn test_output_file_refuses_overwrite_without_force() {
+    let temp = NamedTempFile::new().expect("create temp file");
+    fs::write(temp.path(), "existing").expect("write seed content");
+
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--output",
+            "csv",
+            "--output-file",
+            temp.path().to_str().expect("utf8 path"),
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("already exists"));
+    assert!(stderr.contains("--force"));
+}
+
+#[test]
+fn test_output_file_overwrites_with_force() {
+    let temp = NamedTempFile::new().expect("create temp file");
+    fs::write(temp.path(), "existing").expect("write seed content");
+
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--output",
+            "csv",
+            "--output-file",
+            temp.path().to_str().expect("utf8 path"),
+            "--force",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let written = fs::read_to_string(temp.path()).expect("read output file");
+    assert!(written.contains("metric,value"));
+    assert!(written.contains("total_lines,7"));
 }
