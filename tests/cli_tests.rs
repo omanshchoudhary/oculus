@@ -87,3 +87,69 @@ fn test_strict_mode_succeeds_when_no_parse_errors_exist() {
 
     assert!(output.status.success());
 }
+
+#[test]
+fn test_mixed_filters_status_and_contains() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--status",
+            "200",
+            "--contains",
+            "/api",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 2"));
+    assert!(stdout.contains("Parse errors: 0"));
+    assert!(stdout.contains("200 -> 2"));
+}
+
+#[test]
+fn test_mixed_filters_status_and_regex() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--status",
+            "200",
+            "--regex",
+            r"/api/\w+",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 2"));
+    assert!(stdout.contains("200 -> 2"));
+}
+#[test]
+fn test_mixed_filters_no_match() {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "--status",
+            "500",
+            "--contains",
+            "/dashboard",
+            "tests/fixtures/apache/access.log",
+        ])
+        .output()
+        .expect("failed to execute command");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parsed lines: 0"));
+    assert!(stdout.contains("Parse errors: 0"));
+}
