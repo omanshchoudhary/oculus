@@ -2,6 +2,7 @@ use crate::types::{LogFormat, OutputFormat};
 use clap::Parser;
 use std::path::PathBuf;
 
+// tells you what inputs the program accepts
 #[derive(Debug, Parser)]
 #[command(name = "oculus", version, about = "Analyze log files")]
 pub struct Cli {

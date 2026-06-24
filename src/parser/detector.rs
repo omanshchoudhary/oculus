@@ -31,6 +31,7 @@ pub fn detect_format(lines: &[String]) -> LogFormat {
             json_score += 1;
         }
     }
+    // Default to Apache when detection finds no signal.
     if apache_score == 0 && nginx_score == 0 && json_score == 0 {
         return LogFormat::Apache;
     }

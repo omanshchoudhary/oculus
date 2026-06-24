@@ -30,6 +30,7 @@ pub enum OutputFormat {
     Csv,
 }
 
+// Overall statistics for the log analyzer
 #[derive(Debug, Default)]
 pub struct Stats {
     pub total_lines: usize,

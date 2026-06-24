@@ -44,6 +44,7 @@ fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>
     Ok(lines)
 }
 
+// Building parser based upon the provided format
 fn build_parser(format: LogFormat) -> Box<dyn LogParser> {
     match format {
         LogFormat::Apache => Box::new(ApacheParser::new()),
@@ -53,9 +54,13 @@ fn build_parser(format: LogFormat) -> Box<dyn LogParser> {
     }
 }
 
+// Execution starts here
 fn main() -> anyhow::Result<()> {
+    // Inputs from the cli 
     let args = Cli::parse();
 
+
+    // finalize the format for the lines
     let selected_format = match args.format {
         LogFormat::Auto => {
             let sample_lines = collect_sample_lines(&args.file, 50)?;
@@ -63,11 +68,13 @@ fn main() -> anyhow::Result<()> {
         }
         format => format,
     };
+
     if args.verbose {
         eprintln!("using format: {:?}", selected_format);
     }
 
     let parser = build_parser(selected_format);
+    
     let filters = FilterEngine::new(FilterConfig {
         status: args.status,
         contains: args.contains,
