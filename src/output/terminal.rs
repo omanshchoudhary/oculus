@@ -110,4 +110,29 @@ mod tests {
         // color mode wraps text in ANSI escape codes
         assert!(rendered.contains('\x1b'));
     }
+
+    #[test]
+    fn render_table_snapshot() {
+        let mut stats = Stats {
+            total_lines: 10,
+            parsed_lines: 8,
+            parse_errors: 2,
+            ..Stats::default()
+        };
+        stats.status_counts.insert(200, 5);
+        stats.status_counts.insert(404, 2);
+        stats.status_counts.insert(500, 1);
+        stats.top_paths.insert("/api/users".to_string(), 4);
+        stats.top_paths.insert("/health".to_string(), 3);
+        stats
+            .error_samples
+            .push((2, "invalid apache line".to_string()));
+        stats
+            .error_samples
+            .push((7, "invalid apache line".to_string()));
+
+        let report = Report::from_stats(&stats);
+        // plain mode keeps the snapshot free of ANSI escape codes
+        insta::assert_snapshot!(render_table(&report, false));
+    }
 }

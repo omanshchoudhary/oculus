@@ -1,0 +1,21 @@
+---
+source: src/output/terminal.rs
+expression: "render_table(&report, false)"
+---
+=== Summary ===
+Total lines: 10
+Parsed lines: 8
+Parse errors: 2
+
+Status counts:
+  200 -> 5
+  404 -> 2
+  500 -> 1
+
+Top paths:
+  /api/users -> 4
+  /health -> 3
+
+Parse errors (showing 2 of 2):
+  line 2: invalid apache line
+  line 7: invalid apache line
