@@ -18,7 +18,7 @@ impl Stats {
     }
 
     pub fn on_parse_error(&mut self) {
-        self.parsed_errors += 1;
+        self.parse_errors += 1;
     }
 
     pub fn top_paths_sorted(&self, limit: usize) -> Vec<(String, usize)> {

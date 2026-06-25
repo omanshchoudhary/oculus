@@ -1,17 +1,13 @@
-use crate::types::Stats;
+use crate::output::Report;
 
-pub fn render_csv(stats: &Stats) -> String {
+pub fn render_csv(report: &Report) -> String {
     let mut out = String::new();
     out.push_str("metric,value\n");
-    out.push_str(&format!("total_lines,{}\n", stats.total_lines));
-    out.push_str(&format!("parsed_lines,{}\n", stats.parsed_lines));
-    out.push_str(&format!("parse_errors,{}\n", stats.parsed_errors));
+    out.push_str(&format!("total_lines,{}\n", report.total_lines));
+    out.push_str(&format!("parsed_lines,{}\n", report.parsed_lines));
+    out.push_str(&format!("parse_errors,{}\n", report.parse_errors));
 
-    let mut status_counts: Vec<(u16, usize)> =
-        stats.status_counts.iter().map(|(k, v)| (*k, *v)).collect();
-    status_counts.sort_by_key(|(code, _)| *code);
-
-    for (code, count) in status_counts {
+    for (code, count) in &report.status_counts {
         out.push_str(&format!("status_{},{}\n", code, count));
     }
 
@@ -29,13 +25,14 @@ mod tests {
         let mut stats = Stats {
             total_lines: 5,
             parsed_lines: 4,
-            parsed_errors: 1,
+            parse_errors: 1,
             ..Stats::default()
         };
         stats.status_counts.insert(200, 3);
         stats.status_counts.insert(500, 1);
 
-        let rendered = render_csv(&stats);
+        let report = Report::from_stats(&stats);
+        let rendered = render_csv(&report);
 
         assert!(rendered.contains("metric,value"));
         assert!(rendered.contains("total_lines,5"));

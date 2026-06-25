@@ -22,6 +22,7 @@ use std::path::Path;
 use types::Stats;
 
 use crate::filter::{FilterConfig, FilterEngine};
+use crate::output::Report;
 use crate::output::terminal::render_table;
 use crate::types::{LogFormat, OutputFormat};
 
@@ -56,10 +57,8 @@ fn build_parser(format: LogFormat) -> Box<dyn LogParser> {
 
 // Execution starts here
 fn main() -> anyhow::Result<()> {
-    // Inputs from the cli 
+    // Inputs from the cli
     let args = Cli::parse();
-
-
     // finalize the format for the lines
     let selected_format = match args.format {
         LogFormat::Auto => {
@@ -74,7 +73,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let parser = build_parser(selected_format);
-    
+
     let filters = FilterEngine::new(FilterConfig {
         status: args.status,
         contains: args.contains,
@@ -110,10 +109,11 @@ fn main() -> anyhow::Result<()> {
             }
         }
     }
+    let report = Report::from_stats(&stats);
     let rendered_output = match args.output {
-        OutputFormat::Table => render_table(&stats),
-        OutputFormat::Json => render_json(&stats)?,
-        OutputFormat::Csv => render_csv(&stats),
+        OutputFormat::Table => render_table(&report),
+        OutputFormat::Json => render_json(&report)?,
+        OutputFormat::Csv => render_csv(&report),
     };
 
     if let Some(path) = args.output_file {
@@ -128,10 +128,10 @@ fn main() -> anyhow::Result<()> {
         print!("{}", rendered_output);
     }
 
-    if args.fail_on_parse_errors && stats.parsed_errors > 0 {
+    if args.fail_on_parse_errors && stats.parse_errors > 0 {
         return Err(anyhow!(
             "encountered {} parse error(s) with strict mode enabled",
-            stats.parsed_errors
+            stats.parse_errors
         ));
     }
     Ok(())
