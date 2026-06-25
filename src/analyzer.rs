@@ -1,5 +1,5 @@
 use crate::types::{LogEntry, Stats};
-
+const MAX_ERROR_SAMPLES: usize = 5;
 impl Stats {
     pub fn on_line_read(&mut self) {
         self.total_lines += 1;
@@ -17,8 +17,12 @@ impl Stats {
         }
     }
 
-    pub fn on_parse_error(&mut self) {
+    pub fn on_parse_error(&mut self, message: &str) {
         self.parse_errors += 1;
+        if self.error_samples.len() < MAX_ERROR_SAMPLES {
+            self.error_samples
+                .push((self.total_lines, message.to_string()));
+        };
     }
 
     pub fn top_paths_sorted(&self, limit: usize) -> Vec<(String, usize)> {

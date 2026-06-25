@@ -38,4 +38,5 @@ pub struct Stats {
     pub parse_errors: usize,
     pub status_counts: HashMap<u16, usize>,
     pub top_paths: HashMap<String, usize>,
+    pub error_samples: Vec<(usize, String)>,
 }

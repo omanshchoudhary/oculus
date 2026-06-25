@@ -99,8 +99,10 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
                     Err(err) => {
-                        stats.on_parse_error();
-                        eprintln!("parse error at line {}: {}", line_no, err);
+                        stats.on_parse_error(&err);
+                        if args.verbose {
+                            eprintln!("parse error at line {}: {}", line_no, err);
+                        }
                     }
                 }
             }

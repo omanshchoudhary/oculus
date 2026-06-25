@@ -11,6 +11,12 @@ pub fn render_csv(report: &Report) -> String {
         out.push_str(&format!("status_{},{}\n", code, count));
     }
 
+    for (line_no, reason) in &report.error_samples {
+        // Quote the reason and escape embedded quotes so commas stay safe.
+        let escaped = reason.replace('"', "\"\"");
+        out.push_str(&format!("error_line_{},\"{}\"\n", line_no, escaped));
+    }
+
     out
 }
 

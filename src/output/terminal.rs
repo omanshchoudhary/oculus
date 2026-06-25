@@ -47,6 +47,19 @@ pub fn render_table(report: &Report, use_color: bool) -> String {
         out.push_str(&format!("  {} -> {}\n", path, count));
     }
 
+    if !report.error_samples.is_empty() {
+        let heading = format!(
+            "\nParse errors (showing {} of {}):",
+            report.error_samples.len(),
+            report.parse_errors
+        );
+        out.push_str(&paint(&heading, BOLD, use_color));
+        out.push('\n');
+        for (line_no, reason) in &report.error_samples {
+            out.push_str(&format!("  line {}: {}\n", line_no, reason));
+        }
+    }
+
     out
 }
 

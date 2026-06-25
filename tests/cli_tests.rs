@@ -37,7 +37,12 @@ fn test_pipeline_summary_on_apache_fixture() {
 #[test]
 fn test_pipeline_malformed_lines_have_line_number_and_no_panic() {
     let output = Command::new("cargo")
-        .args(["run", "--", "tests/fixtures/apache/malformed.log"])
+        .args([
+            "run",
+            "--",
+            "--verbose",
+            "tests/fixtures/apache/malformed.log",
+        ])
         .output()
         .expect("failed to execute command");
 

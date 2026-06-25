@@ -12,6 +12,7 @@ pub struct Report {
     pub parse_errors: usize,
     pub status_counts: Vec<(u16, usize)>, // sorted ascending by status code
     pub top_paths: Vec<(String, usize)>,  // sorted from highest to lowest count
+    pub error_samples: Vec<(usize, String)>, // bounded sample of (line number, reason)
 }
 
 impl Report {
@@ -26,6 +27,7 @@ impl Report {
             parse_errors: stats.parse_errors,
             status_counts,
             top_paths: stats.top_paths_sorted(10),
+            error_samples: stats.error_samples.clone(),
         }
     }
 }
