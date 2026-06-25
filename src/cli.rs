@@ -46,4 +46,7 @@ pub struct Cli {
 
     #[arg(long)]
     pub cidr: Option<String>,
+
+    #[arg(long, default_value_t = false)]
+    pub no_color: bool,
 }

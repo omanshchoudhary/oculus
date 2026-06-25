@@ -1,19 +1,48 @@
 use crate::output::Report;
 
-pub fn render_table(report: &Report) -> String {
+// ANSI escape codes used to style and add color to text in the terminal
+const RESET: &str = "\x1b[0m";
+const BOLD: &str = "\x1b[1m";
+const GREEN: &str = "\x1b[32m";
+const YELLOW: &str = "\x1b[33m";
+const RED: &str = "\x1b[31m";
+
+fn paint(text: &str, code: &str, use_color: bool) -> String {
+    if use_color {
+        format!("{code}{text}{RESET}")
+    } else {
+        text.to_string()
+    }
+}
+
+fn status_color(code: u16) -> &'static str {
+    match code {
+        200..=299 => GREEN,
+        300..=399 => YELLOW,
+        _ => RED,
+    }
+}
+
+pub fn render_table(report: &Report, use_color: bool) -> String {
     let mut out = String::new();
 
-    out.push_str("=== Summary ===\n");
+    out.push_str(&paint("=== Summary ===", BOLD, use_color));
+    out.push('\n');
+
     out.push_str(&format!("Total lines: {}\n", report.total_lines));
     out.push_str(&format!("Parsed lines: {}\n", report.parsed_lines));
     out.push_str(&format!("Parse errors: {}\n", report.parse_errors));
 
-    out.push_str("\nStatus counts:\n");
+    out.push_str(&paint("\nStatus counts:", BOLD, use_color));
+    out.push('\n');
+
     for (code, count) in &report.status_counts {
-        out.push_str(&format!("  {} -> {}\n", code, count));
+        let painted_code = paint(&code.to_string(), status_color(*code), use_color);
+        out.push_str(&format!("  {} -> {}\n", painted_code, count));
     }
 
-    out.push_str("\nTop paths:\n");
+    out.push_str(&paint("\nTop paths:", BOLD, use_color));
+    out.push('\n');
     for (path, count) in &report.top_paths {
         out.push_str(&format!("  {} -> {}\n", path, count));
     }
@@ -39,7 +68,7 @@ mod tests {
         stats.status_counts.insert(200, 3);
 
         let report = Report::from_stats(&stats);
-        let rendered = render_table(&report);
+        let rendered = render_table(&report, false);
 
         assert!(rendered.contains("Total lines: 5"));
         assert!(rendered.contains("Parsed lines: 4"));
@@ -48,5 +77,24 @@ mod tests {
         assert!(rendered.contains("500 -> 1"));
         // status codes are rendered in ascending order
         assert!(rendered.find("200 -> 3").unwrap() < rendered.find("500 -> 1").unwrap());
+        // plain mode must not emit any ANSI escape codes
+        assert!(!rendered.contains('\x1b'));
+    }
+
+    #[test]
+    fn renders_color_when_enabled() {
+        let mut stats = Stats {
+            total_lines: 1,
+            parsed_lines: 1,
+            parse_errors: 0,
+            ..Stats::default()
+        };
+        stats.status_counts.insert(200, 1);
+
+        let report = Report::from_stats(&stats);
+        let rendered = render_table(&report, true);
+
+        // color mode wraps text in ANSI escape codes
+        assert!(rendered.contains('\x1b'));
     }
 }

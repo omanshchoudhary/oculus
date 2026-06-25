@@ -6,6 +6,10 @@ mod parser;
 mod reader;
 mod types;
 
+use crate::filter::{FilterConfig, FilterEngine};
+use crate::output::Report;
+use crate::output::terminal::render_table;
+use crate::types::{LogFormat, OutputFormat};
 use anyhow::anyhow;
 use clap::Parser;
 use cli::Cli;
@@ -18,13 +22,9 @@ use parser::json::JsonParser;
 use parser::nginx::NginxParser;
 use reader::LogReader;
 use std::fs;
+use std::io::IsTerminal;
 use std::path::Path;
 use types::Stats;
-
-use crate::filter::{FilterConfig, FilterEngine};
-use crate::output::Report;
-use crate::output::terminal::render_table;
-use crate::types::{LogFormat, OutputFormat};
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
     let mut reader = LogReader::new(path)?;
@@ -110,8 +110,10 @@ fn main() -> anyhow::Result<()> {
         }
     }
     let report = Report::from_stats(&stats);
+    let use_color = !args.no_color && args.output_file.is_none() && std::io::stdout().is_terminal();
+
     let rendered_output = match args.output {
-        OutputFormat::Table => render_table(&report),
+        OutputFormat::Table => render_table(&report, use_color),
         OutputFormat::Json => render_json(&report)?,
         OutputFormat::Csv => render_csv(&report),
     };
