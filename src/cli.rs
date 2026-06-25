@@ -2,9 +2,35 @@ use crate::types::{LogFormat, OutputFormat};
 use clap::Parser;
 use std::path::PathBuf;
 
+const EXAMPLES: &str = "\
+EXAMPLES:
+    # Analyze a log file (format auto-detected)
+    oculus access.log
+
+    # Force a specific format
+    oculus app.log --format json
+
+    # Filter by HTTP status code
+    oculus access.log --status 500
+
+    # Filter by substring or regex
+    oculus access.log --contains /api/users
+    oculus access.log --regex \"GET /api/v[0-9]+\"
+
+    # Export a JSON summary to a file
+    oculus access.log --output json --output-file report.json
+
+    # Strict mode: exit non-zero if any line fails to parse
+    oculus access.log --fail-on-parse-errors";
+
 // tells you what inputs the program accepts
 #[derive(Debug, Parser)]
-#[command(name = "oculus", version, about = "Analyze log files")]
+#[command(
+    name = "oculus",
+    version,
+    about = "Analyze log files",
+    after_help = EXAMPLES
+)]
 pub struct Cli {
     pub file: PathBuf,
 
