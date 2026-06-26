@@ -6,22 +6,34 @@ use oculus::parser::nginx::NginxParser;
 use oculus::types::{LogEntry, Stats};
 
 fn bench_parse(c: &mut Criterion) {
-    let apache = r#"127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /api HTTP/1.1" 200 1234"#;
-    let nginx = r#"127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /api HTTP/1.1" 200 1234"#;
-    let json = r#"{"ip":"127.0.0.1","method":"GET","path":"/api","status":200,"timestamp":"2000-10-10T13:55:36Z"}"#;
+    let apache_lines = generate_apache_lines(1000);
+    let nginx_lines = generate_nginx_lines(1000);
+    let json_lines = generate_json_lines(1000);
 
     let apache_parser = ApacheParser::new();
     let nginx_parser = NginxParser::new();
     let json_parser = JsonParser::new();
 
-    c.bench_function("apache_parse_single_line", |b| {
-        b.iter(|| apache_parser.parse(black_box(apache)))
+    c.bench_function("apache_parse_1000_lines", |b| {
+        b.iter(|| {
+            for line in &apache_lines {
+                let _ = apache_parser.parse(black_box(line));
+            }
+        })
     });
-    c.bench_function("nginx_parse_single_line", |b| {
-        b.iter(|| nginx_parser.parse(black_box(nginx)))
+    c.bench_function("nginx_parse_1000_lines", |b| {
+        b.iter(|| {
+            for line in &nginx_lines {
+                let _ = nginx_parser.parse(black_box(line));
+            }
+        })
     });
-    c.bench_function("json_parse_single_line", |b| {
-        b.iter(|| json_parser.parse(black_box(json)))
+    c.bench_function("json_parse_1000_lines", |b| {
+        b.iter(|| {
+            for line in &json_lines {
+                let _ = json_parser.parse(black_box(line));
+            }
+        })
     });
 
     let mut stats = Stats::default();
@@ -61,3 +73,45 @@ fn bench_parse(c: &mut Criterion) {
 
 criterion_group!(benches, bench_parse);
 criterion_main!(benches);
+
+fn generate_apache_lines(n: usize) -> Vec<String> {
+    let paths = ["/api", "/health", "/login", "/static/app.js", "/users"];
+    let statuses = [200, 200, 200, 404, 500];
+    (0..n)
+        .map(|i| {
+            let path = paths[i % paths.len()];
+            let status = statuses[i % statuses.len()];
+            format!(
+                r#"127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET {path} HTTP/1.1" {status} 1234"#
+            )
+        })
+        .collect()
+}
+
+fn generate_nginx_lines(n: usize) -> Vec<String> {
+    let paths = ["/api", "/health", "/login", "/static/app.js", "/users"];
+    let statuses = [200, 200, 200, 404, 500];
+    (0..n)
+        .map(|i| {
+            let path = paths[i % paths.len()];
+            let status = statuses[i % statuses.len()];
+            format!(
+                r#"127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET {path} HTTP/1.1" {status} 1234"#
+            )
+        })
+        .collect()
+}
+
+fn generate_json_lines(n: usize) -> Vec<String> {
+    let paths = ["/api", "/health", "/login", "/static/app.js", "/users"];
+    let statuses = [200, 200, 200, 404, 500];
+    (0..n)
+        .map(|i| {
+            let path = paths[i % paths.len()];
+            let status = statuses[i % statuses.len()];
+            format!(
+                r#"{{"ip":"127.0.0.1","method":"GET","path":"{path}","status":{status},"timestamp":"2000-10-10T13:55:36Z"}}"#
+            )
+        })
+        .collect()
+}
