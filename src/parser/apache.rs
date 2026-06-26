@@ -17,6 +17,12 @@ impl ApacheParser {
     }
 }
 
+impl Default for ApacheParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LogParser for ApacheParser {
     fn parse(&self, line: &str) -> Result<LogEntry, String> {
         let caps = self

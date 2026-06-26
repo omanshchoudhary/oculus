@@ -1,30 +1,22 @@
-mod analyzer;
-mod cli;
-mod filter;
-mod output;
-mod parser;
-mod reader;
-mod types;
-
-use crate::filter::{FilterConfig, FilterEngine};
-use crate::output::Report;
-use crate::output::terminal::render_table;
-use crate::types::{LogFormat, OutputFormat};
 use anyhow::anyhow;
 use clap::Parser;
-use cli::Cli;
-use output::csv::render_csv;
-use output::json::render_json;
-use parser::LogParser;
-use parser::apache::ApacheParser;
-use parser::detector::detect_format;
-use parser::json::JsonParser;
-use parser::nginx::NginxParser;
-use reader::LogReader;
+use oculus::cli::Cli;
+use oculus::filter::{FilterConfig, FilterEngine};
+use oculus::output::Report;
+use oculus::output::csv::render_csv;
+use oculus::output::json::render_json;
+use oculus::output::terminal::render_table;
+use oculus::parser::LogParser;
+use oculus::parser::apache::ApacheParser;
+use oculus::parser::detector::detect_format;
+use oculus::parser::json::JsonParser;
+use oculus::parser::nginx::NginxParser;
+use oculus::reader::LogReader;
+use oculus::types::Stats;
+use oculus::types::{LogFormat, OutputFormat};
 use std::fs;
 use std::io::IsTerminal;
 use std::path::Path;
-use types::Stats;
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
     let mut reader = LogReader::new(path)?;

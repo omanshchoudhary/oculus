@@ -23,6 +23,12 @@ impl JsonParser {
     }
 }
 
+impl Default for JsonParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LogParser for JsonParser {
     fn parse(&self, line: &str) -> Result<LogEntry, String> {
         let parsed: JsonLogEntry =

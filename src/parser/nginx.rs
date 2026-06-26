@@ -18,6 +18,12 @@ impl NginxParser {
     }
 }
 
+impl Default for NginxParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LogParser for NginxParser {
     fn parse(&self, line: &str) -> Result<LogEntry, String> {
         let caps = self
