@@ -27,21 +27,22 @@ cargo bench -- parse      # only the parser benchmarks
 | Toolchain | rustc 1.96.0 |
 | Profile | `bench` (optimized) |
 
-Numbers are single-threaded, single-line operations. Absolute values depend
-on hardware; treat them as a baseline to catch regressions, not as a hardware
-spec.
+Numbers are single-threaded. Absolute values depend on hardware; treat them as
+a baseline to catch regressions, not as a hardware spec.
 
-## Parser throughput (per line)
+## Parser throughput
 
-Each parser is measured against one representative log line for its format.
+Each parser is measured against a synthetic batch of 1000 lines generated in
+the benchmark (deterministic: cycling paths and status codes). The per-line
+figure is the batch time divided by 1000.
 
-| Parser | Median time / line |
-|--------|--------------------|
-| Apache | ~813 ns |
-| Nginx  | ~865 ns |
-| JSON   | ~366 ns |
+| Parser | 1000 lines | Per line |
+|--------|------------|----------|
+| Apache | ~889 µs | ~0.89 µs |
+| Nginx  | ~904 µs | ~0.90 µs |
+| JSON   | ~372 µs | ~0.37 µs |
 
-The regex-based parsers (Apache, Nginx) are ~2.3x slower than the JSON parser,
+The regex-based parsers (Apache, Nginx) are ~2.4x slower than the JSON parser,
 which is expected — regex matching dominates their cost.
 
 ## Analyzer update functions (per call)
@@ -50,10 +51,10 @@ Measured against a single pre-built `LogEntry` / `Stats`.
 
 | Operation | Median time / call |
 |-----------|--------------------|
-| `on_line_read`      | ~42 ps |
-| `on_parse_error`    | ~4 ns  |
-| `top_paths_sorted`  | ~72 ns |
-| `on_parsed_entry`   | ~82 ns |
+| `on_line_read`      | ~38 ps  |
+| `on_parse_error`    | ~3.2 ns |
+| `top_paths_sorted`  | ~61 ns  |
+| `on_parsed_entry`   | ~72 ns  |
 
 `on_line_read` is a single counter increment, so it is effectively free.
 `top_paths_sorted` here sorts a single-entry map; the cost grows with the
