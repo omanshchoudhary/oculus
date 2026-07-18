@@ -17,6 +17,9 @@ use oculus::types::{LogFormat, OutputFormat};
 use std::fs;
 use std::io::IsTerminal;
 use std::path::Path;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
     let mut reader = LogReader::new(path)?;
@@ -82,7 +85,19 @@ fn main() -> anyhow::Result<()> {
     let mut reader = LogReader::new(&args.file)?;
     let mut stats = Stats::default();
 
+    // Easy write/read between threads without using mutex(locks) and multi thread sharing
+    let running = Arc::new(AtomicBool::new(true));
+    let flag = Arc::clone(&running);
+
+    ctrlc::set_handler(move || {
+        flag.store(false, Ordering::SeqCst);
+    })?;
+
     for line_result in reader.lines() {
+        // Stop in between if Ctrl+C event occured
+        if !running.load(Ordering::SeqCst) {
+            break;
+        }
         match line_result {
             Ok((line_no, line)) => {
                 stats.on_line_read();
@@ -105,6 +120,9 @@ fn main() -> anyhow::Result<()> {
                 return Err(err.into());
             }
         }
+    }
+    if !running.load(Ordering::SeqCst) {
+        eprintln!("interrupted: summary reflects lines processed so far");
     }
     let report = Report::from_stats(&stats);
     let use_color = !args.no_color && args.output_file.is_none() && std::io::stdout().is_terminal();
