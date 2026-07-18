@@ -47,4 +47,23 @@ mod tests {
         assert!(rendered.contains("status_200,3"));
         assert!(rendered.contains("status_500,1"));
     }
+
+    #[test]
+    fn escapes_quotes_in_error_samples() {
+        // regression: embedded quotes must be doubled per the csv convention
+        let mut stats = Stats {
+            total_lines: 1,
+            parsed_lines: 0,
+            parse_errors: 1,
+            ..Stats::default()
+        };
+        stats
+            .error_samples
+            .push((1, r#"unexpected "quote" here"#.to_string()));
+
+        let report = Report::from_stats(&stats);
+        let rendered = render_csv(&report);
+
+        assert!(rendered.contains(r#"error_line_1,"unexpected ""quote"" here""#));
+    }
 }

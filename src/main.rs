@@ -20,7 +20,6 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-
 fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>> {
     let mut reader = LogReader::new(path)?;
     let mut lines = Vec::new();
@@ -38,6 +37,11 @@ fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>
     }
 
     Ok(lines)
+}
+
+// Color only when the user allows it and the output is a live terminal.
+fn should_use_color(no_color: bool, writes_to_file: bool, stdout_is_tty: bool) -> bool {
+    !no_color && !writes_to_file && stdout_is_tty
 }
 
 // Building parser based upon the provided format
@@ -125,7 +129,11 @@ fn main() -> anyhow::Result<()> {
         eprintln!("interrupted: summary reflects lines processed so far");
     }
     let report = Report::from_stats(&stats);
-    let use_color = !args.no_color && args.output_file.is_none() && std::io::stdout().is_terminal();
+    let use_color = should_use_color(
+        args.no_color,
+        args.output_file.is_some(),
+        std::io::stdout().is_terminal(),
+    );
 
     let rendered_output = match args.output {
         OutputFormat::Table => render_table(&report, use_color),
@@ -152,4 +160,25 @@ fn main() -> anyhow::Result<()> {
         ));
     }
     Ok(())
+}
+
+// Unit Tests
+#[cfg(test)]
+mod tests {
+    use super::should_use_color;
+
+    #[test]
+    fn no_color_flag_always_disables_color() {
+        // regression: the check was once inverted, coloring only when
+        // --no-color was passed
+        assert!(!should_use_color(true, false, true));
+        assert!(!should_use_color(true, true, false));
+    }
+
+    #[test]
+    fn color_requires_tty_and_no_output_file() {
+        assert!(should_use_color(false, false, true));
+        assert!(!should_use_color(false, true, true)); // writing to a file
+        assert!(!should_use_color(false, false, false)); // piped stdout
+    }
 }

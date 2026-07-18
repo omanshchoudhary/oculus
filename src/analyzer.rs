@@ -37,3 +37,33 @@ impl Stats {
         items
     }
 }
+
+// Unit Tests
+#[cfg(test)]
+mod tests {
+    use crate::types::Stats;
+
+    #[test]
+    fn parse_error_records_current_line_number() {
+        // regression: samples must carry the line number the error occurred on
+        let mut stats = Stats::default();
+        stats.on_line_read(); // line 1
+        stats.on_line_read(); // line 2
+        stats.on_parse_error("bad line");
+
+        assert_eq!(stats.error_samples, vec![(2, "bad line".to_string())]);
+    }
+
+    #[test]
+    fn error_samples_are_capped_but_count_keeps_growing() {
+        // regression: the sample list is bounded, the error count is not
+        let mut stats = Stats::default();
+        for _ in 0..10 {
+            stats.on_line_read();
+            stats.on_parse_error("bad");
+        }
+
+        assert_eq!(stats.parse_errors, 10);
+        assert_eq!(stats.error_samples.len(), 5);
+    }
+}
