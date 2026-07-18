@@ -38,9 +38,9 @@ fn collect_sample_lines(path: &Path, limit: usize) -> anyhow::Result<Vec<String>
 }
 
 // Building parser based upon the provided format
-fn build_parser(format: LogFormat) -> Box<dyn LogParser> {
+fn build_parser(format: LogFormat, parse_timestamp: bool) -> Box<dyn LogParser> {
     match format {
-        LogFormat::Apache => Box::new(ApacheParser::new()),
+        LogFormat::Apache => Box::new(ApacheParser::new().with_timestamps(parse_timestamp)),
         LogFormat::Nginx => Box::new(NginxParser::new()),
         LogFormat::Json => Box::new(JsonParser::new()),
         LogFormat::Auto => unreachable!("auto format must be resolved before parser creation"),
@@ -64,7 +64,10 @@ fn main() -> anyhow::Result<()> {
         eprintln!("using format: {:?}", selected_format);
     }
 
-    let parser = build_parser(selected_format);
+    // The timestamp is only read by the time filters, so skip parsing it
+    // otherwise (it is ~25% of per-line cost — see docs/benchmarks.md).
+    let need_timestamp = args.from.is_some() || args.to.is_some();
+    let parser = build_parser(selected_format, need_timestamp);
 
     let filters = FilterEngine::new(FilterConfig {
         status: args.status,

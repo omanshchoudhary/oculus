@@ -5,6 +5,7 @@ use regex::Regex;
 
 pub struct ApacheParser {
     pub re: Regex,
+    parse_timestamp: bool,
 }
 
 impl ApacheParser {
@@ -13,7 +14,18 @@ impl ApacheParser {
             r#"^(?P<ip>\S+) \S+ \S+ \[(?P<ts>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) [^"]+" (?P<status>\d{3})"#,
         )
         .expect("valid regex");
-        Self { re }
+        Self {
+            re,
+            parse_timestamp: true,
+        }
+    }
+
+    /// Enable timestamp parsing. Off by default via the CLI unless a consumer
+    /// needs it (currently only the `--from`/`--to` time filters). Keep this in
+    /// sync if you add time-based analytics.
+    pub fn with_timestamps(mut self, enabled: bool) -> Self {
+        self.parse_timestamp = enabled;
+        self
     }
 }
 
@@ -33,9 +45,15 @@ impl LogParser for ApacheParser {
         let status = caps
             .name("status")
             .and_then(|m| m.as_str().parse::<u16>().ok());
-        let timestamp = caps
-            .name("ts")
-            .and_then(|m| DateTime::parse_from_str(m.as_str(), "%d/%b/%Y:%H:%M:%S %z").ok());
+
+        // Timestamp parsing is ~25% of per-line cost (see docs/benchmarks.md),
+        // so we only pay it when a consumer actually reads the timestamp.
+        let timestamp = if self.parse_timestamp {
+            caps.name("ts")
+                .and_then(|m| DateTime::parse_from_str(m.as_str(), "%d/%b/%Y:%H:%M:%S %z").ok())
+        } else {
+            None
+        };
 
         Ok(LogEntry {
             ip: caps.name("ip").map(|m| m.as_str().to_string()),

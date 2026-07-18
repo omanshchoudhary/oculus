@@ -78,3 +78,22 @@ needed when a `--from`/`--to` time filter is active. On the common path it is
 wasted work — the largest win is to parse it lazily rather than to make parsing
 faster. Secondary wins: look up regex capture groups by index instead of by
 name (~5%), and trim per-field `String` allocations (~15%).
+
+## Optimizations applied
+
+### Lazy timestamp parsing
+
+The Apache parser now skips timestamp decoding unless a time filter needs it
+(`ApacheParser::with_timestamps`, wired from `--from`/`--to` in `main`).
+
+Measured on the full binary over a 1,000,000-line / 72 MB Apache log, no time
+filter (the common path):
+
+| | Runtime | Peak memory |
+|---|---------|-------------|
+| Before | ~0.99 s | ~4.8 MB |
+| After  | ~0.63 s | ~4.8 MB |
+
+~36% faster on the common path; memory is unchanged and stays flat regardless
+of file size (streaming). When a time filter is active the timestamp is parsed
+as before, so filtering results are unchanged.
