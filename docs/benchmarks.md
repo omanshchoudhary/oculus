@@ -97,3 +97,26 @@ filter (the common path):
 ~36% faster on the common path; memory is unchanged and stays flat regardless
 of file size (streaming). When a time filter is active the timestamp is parsed
 as before, so filtering results are unchanged.
+
+## Memory behavior
+
+Peak RSS (`/usr/bin/time -f %M`) across a 290x range of input sizes:
+
+| File | Lines | Size | Peak memory | Runtime |
+|------|-------|------|-------------|---------|
+| tiny  | 10 K | 740 KB | ~4.7 MB | 0.00 s |
+| large | 1 M  | 72 MB  | ~4.9 MB | 0.66 s |
+| huge  | 3 M  | 216 MB | ~4.8 MB | 2.02 s |
+
+Memory is O(1) in file size while runtime is O(n) in line count — the
+signature of a streaming design: every line is visited, none are kept.
+Memory scales only with the number of *distinct* paths/statuses held in the
+stats maps, not with total lines.
+
+This is enforced by an ignored-by-default integration test that generates a
+>= 1 GB log, runs the binary against it, and asserts peak RSS stays under
+100 MB (`tests/large_file_test.rs`):
+
+```bash
+cargo test --release --test large_file_test -- --ignored
+```
