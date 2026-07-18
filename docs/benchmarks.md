@@ -43,7 +43,7 @@ figure is the batch time divided by 1000.
 | JSON   | ~372 µs | ~0.37 µs |
 
 The regex-based parsers (Apache, Nginx) are ~2.4x slower than the JSON parser,
-which is expected — regex matching dominates their cost.
+which is expected, since regex matching dominates their cost.
 
 ## Analyzer update functions (per call)
 
@@ -75,7 +75,7 @@ Samples grouped by what the work actually does:
 
 Key finding: timestamp parsing is ~25% of runtime, but the timestamp is only
 needed when a `--from`/`--to` time filter is active. On the common path it is
-wasted work — the largest win is to parse it lazily rather than to make parsing
+wasted work. The largest win is to parse it lazily rather than to make parsing
 faster. Secondary wins: look up regex capture groups by index instead of by
 name (~5%), and trim per-field `String` allocations (~15%).
 
@@ -108,7 +108,7 @@ Peak RSS (`/usr/bin/time -f %M`) across a 290x range of input sizes:
 | large | 1 M  | 72 MB  | ~4.9 MB | 0.66 s |
 | huge  | 3 M  | 216 MB | ~4.8 MB | 2.02 s |
 
-Memory is O(1) in file size while runtime is O(n) in line count — the
+Memory is O(1) in file size while runtime is O(n) in line count, the
 signature of a streaming design: every line is visited, none are kept.
 Memory scales only with the number of *distinct* paths/statuses held in the
 stats maps, not with total lines.

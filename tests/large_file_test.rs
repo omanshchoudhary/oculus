@@ -67,7 +67,7 @@ fn large_file_streams_with_flat_memory() {
     assert!(peak_kb > 0, "never sampled VmHWM");
     assert!(
         peak_kb < 100 * 1024,
-        "peak RSS was {peak_kb} KB — memory grew with file size (streaming broken?)"
+        "peak RSS was {peak_kb} KB, memory grew with file size (streaming broken?)"
     );
 
     // and the run must be complete + correct
