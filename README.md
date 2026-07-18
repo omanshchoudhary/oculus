@@ -48,6 +48,14 @@ cargo run -- path/to/access.log
 cargo install --path .
 ```
 
+Or download a prebuilt Linux binary and checksum from the
+[releases page](https://github.com/omanshchoudhary/oculus/releases):
+
+```bash
+tar -xzf oculus-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c oculus-v1.0.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+```
+
 ## Usage
 
 Examples use the installed `oculus` binary. From a source checkout, prefix with `cargo run --`.
