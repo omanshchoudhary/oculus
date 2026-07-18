@@ -59,3 +59,22 @@ Measured against a single pre-built `LogEntry` / `Stats`.
 `on_line_read` is a single counter increment, so it is effectively free.
 `top_paths_sorted` here sorts a single-entry map; the cost grows with the
 number of distinct paths, so this is a floor rather than a realistic load.
+
+## CPU profiling
+
+Profiled with `cargo flamegraph` against a 1,000,000-line synthetic Apache log
+(`cargo flamegraph --bin oculus -- <big.log> --output json --output-file /dev/null`).
+Samples grouped by what the work actually does:
+
+| Cost area | ~% CPU | What it is |
+|-----------|--------|------------|
+| Timestamp parsing (chrono) | ~25% | decoding the `[.. timestamp ..]` field on every line |
+| Regex matching | ~28% | DFA search (~23%) + capture lookup by name (~5%) |
+| Allocations (malloc/free) | ~15% | one `String` per field per line |
+| HashMap hashing | ~6% | `status_counts` / `top_paths` updates |
+
+Key finding: timestamp parsing is ~25% of runtime, but the timestamp is only
+needed when a `--from`/`--to` time filter is active. On the common path it is
+wasted work — the largest win is to parse it lazily rather than to make parsing
+faster. Secondary wins: look up regex capture groups by index instead of by
+name (~5%), and trim per-field `String` allocations (~15%).

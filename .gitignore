@@ -16,3 +16,8 @@ learnings.txt
 # Local log files (retain test fixtures)
 *.log
 !tests/**/*.log
+
+# Profiling artifacts
+perf.data
+perf.data.old
+flamegraph.svg
